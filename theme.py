@@ -45,10 +45,13 @@ DECISIONS = {
     "retrieved_policy": ("Retrieved policy", "sky"),
     "used_tools": ("Used tools", "purple"),
     "empty_input": ("No question", "neutral"),
+    "access_denied": ("Access denied", "bad"),
+    "approval_requested": ("Approval requested", "warn"),
 }
 TOOL_STATUS = {
     "ok": "ok", "missing_data": "warn", "no_match": "warn",
     "not_saved": "warn", "error": "bad", None: "neutral",
+    "denied": "bad", "pending_approval": "warn",
 }
 
 
@@ -486,8 +489,24 @@ def trace_html(trace, history_sent=0):
                 f'{_plural(len(chunks), "policy section")} + question '
                 f'<span class="sub">(full handbook never sent)</span>')
 
-    rows = [("Tools called", tools_cell), ("Policy evidence", evid_cell),
-            ("Memory used", mem_cell), ("Context sent", ctx_cell)]
+    perm = trace.get("permission") or {}
+    if perm.get("denied"):
+        perm_cell = f'{_pill(f"{perm["denied"]} denied", "bad")} {perm.get("allowed", 0)} allowed · <span class="sub">checked in code</span>'
+    elif perm.get("allowed"):
+        perm_cell = f'{_pill(f"{perm["allowed"]} allowed", "ok")} <span class="sub">own record only, checked in code</span>'
+    else:
+        perm_cell = '<span class="none">No private record accessed</span>'
+
+    appr = trace.get("approval")
+    appr_cell = (f'{_pill(appr["status"], "warn")} <code>{esc(appr["request_id"])}</code> '
+                 f'{esc(appr.get("field"))} → {esc(appr.get("new_value"))} <span class="sub">(not applied until approved)</span>'
+                 if appr else '<span class="none">No change requested</span>')
+
+    if trace.get("sensitive_redacted"):
+        pills.append(_pill("Secret removed", "warn"))
+
+    rows = [("Tools called", tools_cell), ("Permission", perm_cell), ("Approval", appr_cell),
+            ("Policy evidence", evid_cell), ("Memory used", mem_cell), ("Context sent", ctx_cell)]
     summary = "".join(f'<tr><td class="k">{k}</td><td class="wrap">{v}</td></tr>' for k, v in rows)
 
     details = ""
