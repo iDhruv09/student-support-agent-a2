@@ -279,6 +279,20 @@ section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !import
 .trace details.more[open] summary::before {{ content: "– "; }}
 .trace details.more .scroll {{ overflow-x: auto; }}
 
+/* ---------- admin page (A2) ---------- */
+.req {{ font: 400 0.88rem/1.5 var(--body); }}
+.req b {{ font-weight: 600; }}
+.req .chg {{ margin-top: 0.25rem; }}
+.req .chg s {{ color: var(--muted); }}
+.req .sub, .admin-table .sub {{ color: var(--muted); font-size: 0.78rem; }}
+.req code {{ font: 500 0.8rem ui-monospace, Consolas, monospace; background: var(--lavender); color: var(--plum); padding: 0.05rem 0.35rem; border-radius: 4px; }}
+.admin-table {{ overflow-x: auto; }}
+.admin-table th {{ white-space: nowrap; }}
+[data-testid="stMainBlockContainer"] [data-testid="stBaseButton-primary"] {{ background: var(--purple); border-color: var(--purple); }}
+[data-testid="stMainBlockContainer"] [data-testid="stBaseButton-primary"]:hover {{ background: var(--plum); border-color: var(--plum); }}
+[data-testid="stTabs"] button p {{ font: 500 0.88rem var(--head); }}
+[data-testid="stTabs"] [aria-selected="true"] p {{ color: var(--purple); }}
+
 /* ---------- accessibility ---------- */
 :focus-visible {{ outline: 2px solid var(--purple); outline-offset: 2px; }}
 [data-testid="stSidebar"] :focus-visible {{ outline-color: #fff; }}

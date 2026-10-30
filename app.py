@@ -16,6 +16,7 @@ import streamlit as st
 
 from privacy import redact
 import theme
+from admin import render_admin
 from agent import MODEL, run_agent
 from auth import authenticate
 from memory import clear_memory, load_memory
@@ -86,10 +87,9 @@ with st.sidebar:
 
 # ================================================================ admin (completed in Step 16)
 if USER["role"] == "admin":
-    theme.header(MODEL)
-    theme.page_title("Program Office", "Approval requests and the audit log will appear here.")
-    st.info("Approval requests and the audit log are added in Steps 14 and 16.")
+    render_admin(USER, MODEL)
     st.stop()
+
 
 # ================================================================ student chat
 STUDENT_ID = USER["id"]
