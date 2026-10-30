@@ -144,15 +144,15 @@ for msg in ss.messages:
     render_message(msg)
 
 if question:
-    question = redact(question)   
+    raw_question = question 
     history = [{"role": m["role"], "content": m["content"]} for m in ss.messages]
-    user_msg = {"role": "user", "content": question}
+    user_msg = {"role": "user", "content": raw_question}
     render_message(user_msg)
 
     with st.chat_message("assistant", avatar=AGENT_AVATAR):
         slot = st.empty()
         slot.markdown(theme.working_html(), unsafe_allow_html=True)         # animated "working" dots
-        trace = run_agent(question, STUDENT_ID, history)                    # identity from the session only
+        trace = run_agent(raw_question, STUDENT_ID, history)                    # identity from the session only
         theme.type_out(slot, trace["answer"])                               # answer types itself in
 
     ss.messages.append(user_msg)

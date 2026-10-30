@@ -293,6 +293,19 @@ section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !import
 [data-testid="stTabs"] button p {{ font: 500 0.88rem var(--head); }}
 [data-testid="stTabs"] [aria-selected="true"] p {{ color: var(--purple); }}
 
+/* Approve / Reject buttons on a request card: same size, centred (needs key=f"req_..." on the card) */
+[class*="st-key-req_"] [data-testid^="stBaseButton"] {{
+  height: 2.4rem !important; min-height: 2.4rem !important; padding: 0 0.6rem !important;
+  justify-content: center !important; text-align: center !important;
+}}
+[class*="st-key-req_"] [data-testid^="stBaseButton"] > div,
+[class*="st-key-req_"] [data-testid^="stBaseButton"] > div > span,
+[class*="st-key-req_"] [data-testid^="stBaseButton"] [data-testid="stMarkdownContainer"] {{
+  width: auto !important; justify-content: center !important; text-align: center !important;
+}}
+[class*="st-key-req_"] [data-testid="stBaseButton-secondary"] {{ border-color: var(--purple); color: var(--plum); }}
+[class*="st-key-req_"] [data-testid="stBaseButton-secondary"]:hover {{ background: var(--lavender); }}
+
 /* ---------- accessibility ---------- */
 :focus-visible {{ outline: 2px solid var(--purple); outline-offset: 2px; }}
 [data-testid="stSidebar"] :focus-visible {{ outline-color: #fff; }}
@@ -473,7 +486,8 @@ def _result_summary(result):
 def trace_html(trace, history_sent=0):
     """
     Compact view of one agent run, one row per assignment measure:
-    decision, latency, tokens, tools, policy evidence, memory, context. Tool details as a table.
+    decision, latency, tokens, tools, permission, approval, policy evidence, memory, context.
+    Tool details as a table.
     """
     label, kind = DECISIONS.get(trace.get("decision"), (trace.get("decision") or "Answered", "neutral"))
     pills = [_pill(label, kind)]
@@ -481,6 +495,8 @@ def trace_html(trace, history_sent=0):
         pills.append(_pill("Service problem", "bad"))
     if trace.get("language_guard") in ("rewritten_ok", "stripped"):
         pills.append(_pill("Language check applied", "warn"))
+    if trace.get("sensitive_redacted"):
+        pills.append(_pill("Secret removed", "warn"))
     tin, tout = trace.get("input_tokens", 0), trace.get("output_tokens", 0)
 
     tools = trace.get("tools", [])
@@ -504,20 +520,21 @@ def trace_html(trace, history_sent=0):
                 f'<span class="sub">(full handbook never sent)</span>')
 
     perm = trace.get("permission") or {}
-    if perm.get("denied"):
-        perm_cell = f'{_pill(f"{perm["denied"]} denied", "bad")} {perm.get("allowed", 0)} allowed · <span class="sub">checked in code</span>'
-    elif perm.get("allowed"):
-        perm_cell = f'{_pill(f"{perm["allowed"]} allowed", "ok")} <span class="sub">own record only, checked in code</span>'
+    n_denied, n_allowed = perm.get("denied", 0), perm.get("allowed", 0)
+    if n_denied:
+        perm_cell = (f'{_pill(f"{n_denied} denied", "bad")} {n_allowed} allowed · '
+                     f'<span class="sub">checked in code</span>')
+    elif n_allowed:
+        perm_cell = (f'{_pill(f"{n_allowed} allowed", "ok")} '
+                     f'<span class="sub">own record only, checked in code</span>')
     else:
         perm_cell = '<span class="none">No private record accessed</span>'
 
     appr = trace.get("approval")
     appr_cell = (f'{_pill(appr["status"], "warn")} <code>{esc(appr["request_id"])}</code> '
-                 f'{esc(appr.get("field"))} → {esc(appr.get("new_value"))} <span class="sub">(not applied until approved)</span>'
+                 f'{esc(appr.get("field"))} → {esc(appr.get("new_value"))} '
+                 f'<span class="sub">(not applied until approved)</span>'
                  if appr else '<span class="none">No change requested</span>')
-
-    if trace.get("sensitive_redacted"):
-        pills.append(_pill("Secret removed", "warn"))
 
     rows = [("Tools called", tools_cell), ("Permission", perm_cell), ("Approval", appr_cell),
             ("Policy evidence", evid_cell), ("Memory used", mem_cell), ("Context sent", ctx_cell)]

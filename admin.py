@@ -2,7 +2,7 @@
 admin.py - Program Office screen (Assignment 2): human approval + audit log.
 
 Shown only when the logged-in user has role "admin" (checked in app.py from the session).
-  1. Summary tiles   pending / approved / rejected / denied counts
+  1. Summary tiles     pending / approved / rejected / access denied
   2. Pending requests  each with Approve and Reject. Approve applies the change;
                        Reject leaves the record untouched. Both are audited (tools.decide_approval).
   3. Decided requests  history of approved / rejected requests
@@ -65,6 +65,7 @@ def render_admin(user, model_name=""):
     decided = sorted((r for r in pending_all.values() if r["status"] != "PENDING"),
                      key=lambda r: r.get("decided_at") or "", reverse=True)
     counts = audit_summary()
+    e = theme.esc
 
     st.markdown(theme._kpis([("Pending requests", len(open_reqs)),
                              ("Approved", counts.get("APPROVED", 0)),
@@ -79,16 +80,16 @@ def render_admin(user, model_name=""):
         if not open_reqs:
             st.info("No requests are waiting for approval.")
         for r in open_reqs:
-            with st.container(border=True):
-                left, right = st.columns([3, 1.4], vertical_alignment="center")
+            with st.container(border=True, key=f"req_{r['request_id']}"):
+                left, right = st.columns([3, 1.6], vertical_alignment="center")
                 with left:
                     st.markdown(
-                        f'<div class="req"><code>{theme.esc(r["request_id"])}</code> '
-                        f'<b>{theme.esc(_student_name(students, r["target"]))}</b> '
-                        f'<span class="sub">({theme.esc(r["target"])}) · {theme.esc(r["created_at"])}</span>'
-                        f'<div class="chg">{theme.esc(r["field"].capitalize())}: '
-                        f'<s>{theme.esc(r.get("old_value"))}</s> → <b>{theme.esc(r["new_value"])}</b></div>'
-                        + (f'<div class="sub">Reason: {theme.esc(r["reason"])}</div>' if r.get("reason") else "")
+                        f'<div class="req"><code>{e(r["request_id"])}</code> '
+                        f'<b>{e(_student_name(students, r["target"]))}</b> '
+                        f'<span class="sub">({e(r["target"])}) · {e(r["created_at"])}</span>'
+                        f'<div class="chg">{e(r["field"].capitalize())}: '
+                        f'<s>{e(r.get("old_value"))}</s> → <b>{e(r["new_value"])}</b></div>'
+                        + (f'<div class="sub">Reason: {e(r["reason"])}</div>' if r.get("reason") else "")
                         + '</div>', unsafe_allow_html=True)
                 with right:
                     a, b = st.columns(2)
@@ -102,7 +103,6 @@ def render_admin(user, model_name=""):
         if not decided:
             st.info("No decisions yet.")
         else:
-            e = theme.esc
             st.markdown(_table(
                 ["Request", "Student", "Change", "Result", "Decided by", "Decided at"],
                 [[f"<code>{e(r['request_id'])}</code>", e(r["target"]),
@@ -124,7 +124,6 @@ def render_admin(user, model_name=""):
             rows = [r for r in rows if r["decision"] in decisions]
         if actors:
             rows = [r for r in rows if r["actor"] in actors]
-        e = theme.esc
         shown = rows[:MAX_AUDIT_ROWS]
         st.markdown(_table(
             ["Time", "Who", "Action", "Target", "Decision", "Approver", "Result", "Request / Trace"],
