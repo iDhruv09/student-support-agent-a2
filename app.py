@@ -1,13 +1,13 @@
 """
-app.py - Streamlit chat interface for the Student Support Agent (Assignment 1).
+app.py - Streamlit interface for the Student Support Agent (Assignment 2).
 
 Run with:  streamlit run app.py
 
-What this screen shows
-  - one chat where the same agent decides: answer directly, use a tool, retrieve policy, use memory
-  - a trace under every answer (tools, policy evidence, memory, tokens, latency)
-  - the student's long-term memory, which survives "New session"
-  - a switch that simulates a fee-system outage (tool-error scenario)
+Assignment 2 changes
+  - Login screen: a student or the admin signs in with ID + password (hashed, see auth.py).
+  - The student ID used by the agent comes ONLY from the logged-in session,
+    never from a dropdown or from text typed in the chat.
+  - Admin role: approvals and audit page (completed in Step 16).
 
 Note on the typing effect: the agent returns the full answer first (tools need the complete
 result), then the screen types it in. Latency in the trace is the agent's real time only.
@@ -16,16 +16,20 @@ import streamlit as st
 
 import theme
 from agent import MODEL, run_agent
+from auth import authenticate
 from memory import clear_memory, load_memory
-from tools import SIMULATE_OUTAGE, load_students
+from tools import SIMULATE_OUTAGE
 
 st.set_page_config(page_title="Student Support Agent", page_icon=theme.favicon(),
                    layout="wide", initial_sidebar_state="auto")
 theme.apply()
 
 ss = st.session_state
-ss.setdefault("messages", [])      # this session's chat: {"role", "content", "trace", "history_sent"}
-ss.setdefault("queued", None)      # question chosen from a demo button
+ss.setdefault("messages", [])          # this session's chat: {"role", "content", "trace", "history_sent"}
+ss.setdefault("queued", None)          # question chosen from a demo button
+ss.setdefault("failed_logins", 0)
+MAX_FAILED_LOGINS = 5
+DEMO_ACCOUNTS = [("S101", "S101@demo"), ("S102", "S102@demo"), ("admin", "admin@demo")]
 
 # Scenarios from the assignment brief, as one-click questions: (question, what it shows)
 SAMPLES = [
@@ -40,7 +44,56 @@ AGENT_AVATAR = ":material/support_agent:"
 USER_AVATAR = ":material/person:"
 
 
-# ---------------------------------------------------------------- callbacks
+# ================================================================ login
+def login_screen():
+    theme.header(MODEL)
+    _, mid, _ = st.columns([1, 1.3, 1])
+    with mid:
+        theme.page_title("Sign in", "Use your student ID, or the admin account for approvals.")
+        if ss.failed_logins >= MAX_FAILED_LOGINS:
+            st.error("Too many failed attempts. Close this tab and try again later.")
+            st.stop()
+        with st.form("login"):
+            user_id = st.text_input("User ID", placeholder="e.g. S101 or admin")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+        if submitted:
+            user = authenticate(user_id, password)
+            if user:
+                ss.clear()                                   # nothing from a previous user survives
+                ss.user = user
+                st.rerun()
+            ss.failed_logins += 1
+            st.error("Invalid ID or password.")              # same message for both cases
+        theme.demo_logins(DEMO_ACCOUNTS)
+    st.stop()
+
+
+def logout():
+    ss.clear()
+
+
+if "user" not in ss:
+    login_screen()
+
+USER = ss.user                                               # trusted identity for this session
+SIMULATE_OUTAGE["on"] = bool(ss.get("outage", False))        # set before the agent runs
+
+with st.sidebar:
+    theme.signed_in(USER["name"], USER["id"], USER["role"])
+    st.button("Log out", on_click=logout, use_container_width=True, key="logout")
+
+# ================================================================ admin (completed in Step 16)
+if USER["role"] == "admin":
+    theme.header(MODEL)
+    theme.page_title("Program Office", "Approval requests and the audit log will appear here.")
+    st.info("Approval requests and the audit log are added in Steps 14 and 16.")
+    st.stop()
+
+# ================================================================ student chat
+STUDENT_ID = USER["id"]
+
+
 def reset_chat():
     """New session: clears the chat only. Long-term memory is kept."""
     ss.messages = []
@@ -48,17 +101,6 @@ def reset_chat():
 
 def queue_question(text):
     ss.queued = text
-
-
-# ---------------------------------------------------------------- data
-try:
-    STUDENTS = load_students()
-except Exception as err:                      # missing or broken students.json
-    theme.header(MODEL)
-    st.error(f"Student records could not be loaded: {err}. Check that data/students.json exists.")
-    st.stop()
-
-SIMULATE_OUTAGE["on"] = bool(ss.get("outage", False))     # set before the agent runs
 
 
 def render_trace(msg):
@@ -80,15 +122,10 @@ def sample_buttons(prefix):
                            on_click=queue_question, args=(question,))
 
 
-# ---------------------------------------------------------------- session panel (top part)
 with st.sidebar:
-    student_id = st.selectbox("Signed in as", list(STUDENTS), key="student_id", on_change=reset_chat,
-                              format_func=lambda sid: f"{sid}  {STUDENTS[sid]['name']}",
-                              help="Demo selector: choose who is asking. Switching student starts a new session.")
-    st.button("New session", on_click=reset_chat, use_container_width=True,
+    st.button("New session", on_click=reset_chat, use_container_width=True, key="new_session",
               help="Clears this chat. Remembered facts are kept.")
 
-# ---------------------------------------------------------------- main: frozen bar + chat
 theme.header(MODEL)
 theme.intro()
 
@@ -113,7 +150,7 @@ if question:
     with st.chat_message("assistant", avatar=AGENT_AVATAR):
         slot = st.empty()
         slot.markdown(theme.working_html(), unsafe_allow_html=True)         # animated "working" dots
-        trace = run_agent(question, student_id, history)
+        trace = run_agent(question, STUDENT_ID, history)                    # identity from the session only
         theme.type_out(slot, trace["answer"])                               # answer types itself in
 
     ss.messages.append(user_msg)
@@ -129,14 +166,14 @@ stats = {"questions": len(traces),
          "out_tokens": sum(t["output_tokens"] for t in traces)}
 
 with st.sidebar:
-    memory_items = load_memory(student_id)
+    memory_items = load_memory(STUDENT_ID)
     theme.side_title("What I remember", ruled=True)
     theme.memory_chips(memory_items)
     if memory_items:
         if st.button("Clear remembered facts", use_container_width=True, key="clear_mem",
                      help="Programme and preferences are kept between sessions. "
                           "OTPs, passwords and temporary feelings are never stored."):
-            clear_memory(student_id)
+            clear_memory(STUDENT_ID)
             st.rerun()
 
     theme.side_title("This session", ruled=True)

@@ -1,0 +1,57 @@
+{
+  "S101": {
+    "role": "student",
+    "name": "Dhruv Patel",
+    "password_hash": "pbkdf2_sha256$200000$7af8785a0be43e6da2c6b70d5abc2bcf$c9f2c09e0b140db4a6b9e27bc10d80781d493555ed097a5a9ff50b3dae29ca8c"
+  },
+  "S102": {
+    "role": "student",
+    "name": "Riya Shah",
+    "password_hash": "pbkdf2_sha256$200000$5513c8478ba0646f1b85a623d8fe7c39$5362784e75037566852eeee5bb4a57c08f7e74c748c34b81fd96ab77bd0131ba"
+  },
+  "S103": {
+    "role": "student",
+    "name": "Aman Mehta",
+    "password_hash": "pbkdf2_sha256$200000$155acb6d6ad5ee5faeb4f805d3d768e1$f5f7f8548c7b62777765488836fc94950636540cc3a90c285b74a712b05db780"
+  },
+  "S104": {
+    "role": "student",
+    "name": "Priya Desai",
+    "password_hash": "pbkdf2_sha256$200000$70d44a1df860ba756adbe9fb4693d5dd$f2bd238bcf7fdd68955e2e80b6a8374407ffecd119eddec66e171af9c02652ae"
+  },
+  "S105": {
+    "role": "student",
+    "name": "Karan Joshi",
+    "password_hash": "pbkdf2_sha256$200000$853b1a7c7ce743326c07e0b8823f67b8$da3b791f0b9887e4d55474497ba63aeda07a369e46b5f5f7d90b90d18a7ee3da"
+  },
+  "S106": {
+    "role": "student",
+    "name": "Sneha Iyer",
+    "password_hash": "pbkdf2_sha256$200000$2c6d94aba86a7403ac7a55ab033b26ad$29b300db3b6dec0c6c9a7f8a3589ef2bb731668481ce1b54aec289ee9d889bf3"
+  },
+  "S107": {
+    "role": "student",
+    "name": "Arjun Rao",
+    "password_hash": "pbkdf2_sha256$200000$eaf3520aade7fd83e52140325fd274cd$3ffb20b864aad63a71d94431639a5b354231998bd2a31c81015b14a0a10c8fa7"
+  },
+  "S108": {
+    "role": "student",
+    "name": "Meera Nair",
+    "password_hash": "pbkdf2_sha256$200000$a736c926937e86a752f65255de398532$74f06dd065928b754102ea4de7364a309184cb005959e47064a12976116fc1af"
+  },
+  "S109": {
+    "role": "student",
+    "name": "Rohan Gupta",
+    "password_hash": "pbkdf2_sha256$200000$1bcf15ff04ca78780e8d8b2a44d852ce$a4c46dd27efdb94d188a2f70ad9a790c99ce2625383956655eaee8aef72ce761"
+  },
+  "S110": {
+    "role": "student",
+    "name": "Ananya Kulkarni",
+    "password_hash": "pbkdf2_sha256$200000$38fcfa5716a6d90c3c01e78e1ccb9b3b$0027375c61fee22bc4178c825cab6171bc46a8c74d845c0cb32c7a2617c32c99"
+  },
+  "admin": {
+    "role": "admin",
+    "name": "Program Office",
+    "password_hash": "pbkdf2_sha256$200000$6b13b468d8264986c18b1fe1bdc57b6a$8262e63de6481aa0290c53751520fa226dc47f380577568ef40db8a795642402"
+  }
+}

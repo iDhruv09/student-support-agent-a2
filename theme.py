@@ -120,6 +120,16 @@ footer, [data-testid="stDecoration"] {{ display: none; }}
 .empty-head {{ font: 600 1.15rem var(--head); color: var(--ink); margin: 1rem 0 0.2rem; }}
 .empty-sub {{ font: 400 0.95rem var(--body); color: var(--muted); margin: 0 0 0.9rem; }}
 
+/* ---------- login card (A2) ---------- */
+[data-testid="stForm"] {{ border: 1px solid var(--lav-line); border-radius: 12px; background: #fff; padding: 1.1rem 1.2rem; }}
+[data-testid="stForm"] label p {{ font: 500 0.85rem var(--body); color: var(--ink); }}
+[data-testid="stForm"] [data-testid="stBaseButton-primaryFormSubmit"] {{
+  background: var(--purple); border-color: var(--purple); color: #fff; font: 600 0.92rem var(--body); border-radius: 8px;
+}}
+[data-testid="stForm"] [data-testid="stBaseButton-primaryFormSubmit"]:hover {{ background: var(--plum); border-color: var(--plum); }}
+.demo-logins {{ font: 400 0.8rem/1.5 var(--body); color: var(--muted); margin-top: 0.6rem; text-align: center; }}
+.demo-logins code {{ font: 500 0.78rem ui-monospace, Consolas, monospace; background: var(--lavender); color: var(--plum); padding: 0.05rem 0.3rem; border-radius: 4px; }}
+
 /* ---------- demo question buttons ---------- */
 [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] {{
   font: 500 0.92rem/1.4 var(--body); color: var(--ink); background: #fff;
@@ -209,16 +219,19 @@ section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !import
 [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] p {{ color: #fff; }}
 [data-testid="stSidebar"] [data-testid="stTooltipIcon"] svg {{ stroke: rgba(255,255,255,.8); }}
 
+/* signed-in card (A2) */
+.who {{ display: flex; align-items: center; gap: 0.6rem; }}
+.who .av {{ width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--purple) !important;
+           display: flex; align-items: center; justify-content: center; font: 600 0.85rem var(--head); flex: none; }}
+.who b {{ display: block; font: 600 0.95rem/1.2 var(--head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+.who span {{ display: block; font: 400 0.75rem var(--body); color: rgba(255,255,255,.8); }}
+
 .mem {{ background: rgba(255,255,255,.14); border-radius: 8px; padding: 0.35rem 0.65rem; margin: 0 0 0.25rem;
         font: 400 0.84rem/1.35 var(--body); display: flex; justify-content: space-between; gap: 0.5rem; }}
 .mem span {{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }}
 .mem small {{ color: rgba(255,255,255,.72); font-size: 0.72rem; white-space: nowrap; }}
 .mem-empty {{ font: 400 0.8rem/1.45 var(--body); color: rgba(255,255,255,.8); margin: 0; }}
 .mem-more {{ font: 400 0.76rem var(--body); color: rgba(255,255,255,.75); margin: 0; }}
-
-.stat-line {{ font: 400 0.82rem/1.6 var(--body); color: rgba(255,255,255,.85); font-variant-numeric: tabular-nums; }}
-.stat-line b {{ font: 600 0.95rem var(--head); color: #fff; }}
-
 
 /* ---------- compact KPI tiles (trace + session panel) ---------- */
 .kpis {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; margin: 0 0 0.6rem; }}
@@ -243,8 +256,6 @@ section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !import
 .pill.bad {{ background: #FCE9E7; border-color: #EBB1AC; color: var(--red); }}
 .pill.neutral {{ background: var(--lavender); border-color: var(--lav-line); color: var(--plum); }}
 .pill.mono {{ font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; }}
-.metrics {{ margin-left: auto; font: 500 0.78rem var(--body); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }}
-.metrics b {{ color: var(--plum); font-weight: 600; }}
 
 .trace table {{ width: 100%; border-collapse: collapse; margin: 0; }}
 .trace table, .trace tr, .trace td, .trace th {{ border: 0; background: none; }}
@@ -279,7 +290,7 @@ section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !import
   .app-head p.app-sub {{ font-size: 0.9rem; }}
   [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] {{ height: auto; min-height: 3rem; }}
   [data-testid="stChatMessage"]:has([aria-label="Chat message from user"]) {{ max-width: 100%; }}
-   .kpis {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  .kpis {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
   .trace td.k {{ width: 6.5rem; white-space: normal; }}
 }}
 </style>
@@ -293,7 +304,7 @@ def apply():
 
 # ---------------------------------------------------------------- main components
 def header(model_name=""):
-    """Frozen brand bar (stays on top while chatting) + page title."""
+    """Frozen brand bar (stays on top while chatting)."""
     logo = _logo_data_uri()
     img = (f'<img class="brand-logo" src="{logo}" '
            f'alt="Adani Institute of Digital Technology Management">') if logo else ""
@@ -302,17 +313,29 @@ def header(model_name=""):
                 unsafe_allow_html=True)
 
 
+def page_title(title, subtitle=""):
+    """Large page title + one-line description (scrolls away; the brand bar stays)."""
+    sub = f'<p class="app-sub">{esc(subtitle)}</p>' if subtitle else ""
+    st.markdown(f'<div class="app-head"><h1 class="app-title">{esc(title)}</h1>{sub}</div>',
+                unsafe_allow_html=True)
+
+
 def intro():
-    """Large title + one-line description. Scrolls away; the brand bar keeps the name visible."""
-    st.markdown('<div class="app-head"><h1 class="app-title">Student Support Agent</h1>'
-                '<p class="app-sub">Ask about your fees, scholarships, course changes or institute policies. '
-                'I can also raise a support request for you.</p></div>', unsafe_allow_html=True)
+    page_title("Student Support Agent",
+               "Ask about your fees, scholarships, course changes or institute policies. "
+               "I can also raise a support request for you.")
 
 
 def empty_state():
     st.markdown('<div class="empty-head">How can I help today?</div>'
                 '<div class="empty-sub">Pick a question to see how the agent works, or type your own below.</div>',
                 unsafe_allow_html=True)
+
+
+def demo_logins(pairs):
+    """Small line under the login form listing demo accounts: [(id, password), ...]."""
+    items = " · ".join(f"<code>{esc(u)}</code> / <code>{esc(p)}</code>" for u, p in pairs)
+    st.markdown(f'<div class="demo-logins">Demo accounts: {items}</div>', unsafe_allow_html=True)
 
 
 def working_html(text="Checking your records and the handbook"):
@@ -352,6 +375,14 @@ def side_title(text, ruled=False):
 
 def side_rule():
     st.markdown('<hr class="side-rule">', unsafe_allow_html=True)
+
+
+def signed_in(name, user_id, role):
+    """Signed-in card at the top of the session panel: initials, name, ID and role."""
+    initials = "".join(w[0] for w in str(name).split()[:2]).upper() or "?"
+    st.markdown(f'<div class="who"><div class="av">{esc(initials)}</div>'
+                f'<div><b>{esc(name)}</b><span>{esc(user_id)} · {esc(str(role).capitalize())}</span></div></div>',
+                unsafe_allow_html=True)
 
 
 def memory_chips(items):
@@ -434,9 +465,6 @@ def trace_html(trace, history_sent=0):
     if trace.get("language_guard") in ("rewritten_ok", "stripped"):
         pills.append(_pill("Language check applied", "warn"))
     tin, tout = trace.get("input_tokens", 0), trace.get("output_tokens", 0)
-    metrics = (f'<span class="metrics"><b>{trace.get("latency_s", 0):.2f}s</b> · '
-               f'<b>{tin:,}</b> in / <b>{tout:,}</b> out tokens · '
-               f'{_plural(trace.get("llm_calls", 0), "model call")}</span>')
 
     tools = trace.get("tools", [])
     if tools:
@@ -475,7 +503,8 @@ def trace_html(trace, history_sent=0):
                    f'{trs}</table></div></details>')
 
     trace_id = trace.get("trace_id")
-    footer = f'<div class="sub" style="margin-top:0.45rem">Trace ID {esc(trace_id)} · saved to data/traces.jsonl</div>' if trace_id else ""
+    footer = (f'<div class="sub" style="margin-top:0.45rem">Trace ID {esc(trace_id)} · saved to data/traces.jsonl</div>'
+              if trace_id else "")
 
     tiles = _kpis([("Response time", f'{trace.get("latency_s", 0):.2f}s'),
                    ("Input tokens", f"{tin:,}"), ("Output tokens", f"{tout:,}"),
