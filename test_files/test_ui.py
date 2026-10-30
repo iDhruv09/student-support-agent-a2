@@ -59,7 +59,7 @@ users_text = open("data/users.json", encoding="utf-8").read()
 check("users.json holds hashes only (no plain password)", "S101@demo" not in users_text and "pbkdf2_sha256$" in users_text)
 
 print("\n2. Login screen")
-at = AppTest.from_file("app.py", default_timeout=30).run()
+at = AppTest.from_file(os.path.join(ROOT, "app.py"), default_timeout=30).run()
 check("login screen shown first (no chat)", len(at.text_input) == 2 and len(at.chat_input) == 0)
 login(at, "S101", "wrong")
 check("wrong password -> error, not logged in", "user" not in at.session_state and len(at.error) > 0)

@@ -14,6 +14,7 @@ result), then the screen types it in. Latency in the trace is the agent's real t
 """
 import streamlit as st
 
+from privacy import redact
 import theme
 from agent import MODEL, run_agent
 from auth import authenticate
@@ -143,6 +144,7 @@ for msg in ss.messages:
     render_message(msg)
 
 if question:
+    question = redact(question)   
     history = [{"role": m["role"], "content": m["content"]} for m in ss.messages]
     user_msg = {"role": "user", "content": question}
     render_message(user_msg)

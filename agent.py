@@ -12,6 +12,8 @@ from groq import Groq
 from memory import select_relevant_memory
 from tools import TOOLS_SCHEMA, execute_tool
 
+from privacy import contains_secret, redact
+
 load_dotenv(override=True)                       # .env always wins over Windows variables
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 MAX_STEPS = 5                                    # max LLM calls per question (no infinite loops)
@@ -107,7 +109,9 @@ def call_llm(messages):
 def run_agent(question, student_id, history=None, save_trace=True):
     """Answer one question. Returns a trace dict (answer + everything that happened)."""
     start = time.perf_counter()
-    question = (question or "").strip()
+    raw = (question or "").strip()
+    question = redact(raw)                                   # secrets never reach the LLM, memory or trace
+    history = [{**m, "content": redact(m.get("content"))} for m in (history or [])]
     trace = {
         "trace_id": "TR-" + uuid.uuid4().hex[:8].upper(),
         "time": datetime.now().isoformat(timespec="seconds"),
@@ -115,6 +119,7 @@ def run_agent(question, student_id, history=None, save_trace=True):
         "decision": "", "tools": [], "evidence": {"policy_chunks": [], "memory": []},
         "llm_calls": 0, "input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
         "answer": "", "status": "ok",
+        "sensitive_redacted": contains_secret(raw),
     }
     if not question:
         trace.update(answer="Please type a question.", decision="empty_input")
