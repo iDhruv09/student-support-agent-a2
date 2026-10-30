@@ -73,7 +73,7 @@ check("Bad args (None) -> no crash", "status" in execute_tool("get_fee_status", 
 
 print("\n9. Schemas")
 names = [t["function"]["name"] for t in TOOLS_SCHEMA]
-check("5 tools in schema", len(names) == 5)
+check("7 tools in schema (5 from A1 + 2 from A2)", len(names) == 7)
 check("Every schema has a matching function", set(names) == set(TOOL_FUNCTIONS))
 
 if tools.TICKETS_FILE.exists():
