@@ -3,24 +3,24 @@ app.py - Streamlit interface for the Student Support Agent (Assignment 2).
 
 Run with:  streamlit run app.py
 
-Assignment 2 changes
   - Login screen: a student or the admin signs in with ID + password (hashed, see auth.py).
   - The student ID used by the agent comes ONLY from the logged-in session,
     never from a dropdown or from text typed in the chat.
-  - Admin role: approvals and audit page (completed in Step 16).
+  - Students get the chat; the admin gets the Program Office screen (admin.py).
+  - The signed-in user card (name, ID, email) sits at the bottom of the left panel.
 
 Note on the typing effect: the agent returns the full answer first (tools need the complete
 result), then the screen types it in. Latency in the trace is the agent's real time only.
 """
 import streamlit as st
 
-from privacy import redact
 import theme
 from admin import render_admin
 from agent import MODEL, run_agent
 from auth import authenticate
 from memory import clear_memory, load_memory
-from tools import SIMULATE_OUTAGE
+from privacy import redact
+from tools import SIMULATE_OUTAGE, load_students
 
 st.set_page_config(page_title="Student Support Agent", page_icon=theme.favicon(),
                    layout="wide", initial_sidebar_state="auto")
@@ -32,8 +32,9 @@ ss.setdefault("queued", None)          # question chosen from a demo button
 ss.setdefault("failed_logins", 0)
 MAX_FAILED_LOGINS = 5
 DEMO_ACCOUNTS = [("S101", "S101@demo"), ("S102", "S102@demo"), ("admin", "admin@demo")]
+ADMIN_EMAIL = "programoffice@institute.edu"       # Program Office contact from the policy handbook
 
-# Scenarios from the assignment brief, as one-click questions: (question, what it shows)
+# Scenarios from the assignment briefs, as one-click questions: (question, what it shows)
 SAMPLES = [
     ("What is my current fee status?", "Tool call: fee record"),
     ("The payment portal failed. Can I pay on the next working day?", "Policy retrieval"),
@@ -75,21 +76,32 @@ def logout():
     ss.clear()
 
 
+def user_email(user):
+    """Email shown under the name: from the student record, or the Program Office contact for the admin."""
+    if user["role"] == "admin":
+        return user.get("email") or ADMIN_EMAIL
+    try:
+        return user.get("email") or load_students().get(user["id"], {}).get("email")
+    except Exception:
+        return None
+
+
 if "user" not in ss:
     login_screen()
 
 USER = ss.user                                               # trusted identity for this session
 SIMULATE_OUTAGE["on"] = bool(ss.get("outage", False))        # set before the agent runs
 
+# ---- account area, bottom of the left panel (theme.py moves these two elements to the bottom)
 with st.sidebar:
-    theme.signed_in(USER["name"], USER["id"], USER["role"])
     st.button("Log out", on_click=logout, use_container_width=True, key="logout")
+    with st.container(key="usercard"):
+        theme.signed_in(USER["name"], "Admin" if USER["role"] == "admin" else USER["id"], user_email(USER))
 
-# ================================================================ admin (completed in Step 16)
+# ================================================================ admin
 if USER["role"] == "admin":
     render_admin(USER, MODEL)
     st.stop()
-
 
 # ================================================================ student chat
 STUDENT_ID = USER["id"]
@@ -144,15 +156,15 @@ for msg in ss.messages:
     render_message(msg)
 
 if question:
-    raw_question = question 
+    raw_question = question                  # the agent redacts it and flags it in the trace
     history = [{"role": m["role"], "content": m["content"]} for m in ss.messages]
-    user_msg = {"role": "user", "content": raw_question}
+    user_msg = {"role": "user", "content": redact(raw_question)}    # screen and saved chat never show a secret
     render_message(user_msg)
 
     with st.chat_message("assistant", avatar=AGENT_AVATAR):
         slot = st.empty()
         slot.markdown(theme.working_html(), unsafe_allow_html=True)         # animated "working" dots
-        trace = run_agent(raw_question, STUDENT_ID, history)                    # identity from the session only
+        trace = run_agent(raw_question, STUDENT_ID, history)                # identity from the session only
         theme.type_out(slot, trace["answer"])                               # answer types itself in
 
     ss.messages.append(user_msg)
@@ -172,8 +184,8 @@ with st.sidebar:
     theme.side_title("What I remember", ruled=True)
     theme.memory_chips(memory_items)
     if memory_items:
-        if st.button("Clear remembered facts", use_container_width=True, key="clear_mem",
-                     help="Programme and preferences are kept between sessions. "
+        if st.button("Clear memory", use_container_width=True, key="clear_mem",
+                     help="Clears the remembered facts. They are otherwise kept between sessions. "
                           "OTPs, passwords and temporary feelings are never stored."):
             clear_memory(STUDENT_ID)
             st.rerun()

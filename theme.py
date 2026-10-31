@@ -7,6 +7,7 @@ Look and feel
   - Headings in Outfit, body in Inter (Google Fonts, with system fallbacks).
   - Fixed layout: the brand bar stays at the top while the chat scrolls,
     and the session panel fits the screen without its own scrollbar.
+  - The signed-in user card sits at the BOTTOM of the session panel (name, ID, email).
   - One motion moment: a "working" indicator, then the answer types itself in.
 
 Everything here is presentation only. No agent, tool or security logic lives in this file.
@@ -36,7 +37,7 @@ GREEN = "#1F7A4D"
 AMBER = "#9A5B00"
 RED = "#B3261E"
 
-MAX_MEMORY_CHIPS = 3    # keeps the session panel short enough to never scroll
+MAX_MEMORY_CHIPS = 2    # keeps the session panel short enough to never scroll
 
 # ---------------------------------------------------------------- labels
 DECISIONS = {
@@ -199,14 +200,17 @@ footer, [data-testid="stDecoration"] {{ display: none; }}
 /* ---------- session panel (the purple page): fits the screen, never scrolls ---------- */
 [data-testid="stSidebar"] {{ background: var(--purple); }}
 section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !important; min-width: 15.5rem !important; max-width: 15.5rem !important; }}
-[data-testid="stSidebarUserContent"] {{ padding-left: 1rem; padding-right: 1rem; }}
+[data-testid="stSidebarUserContent"] {{ padding-left: 0.9rem; padding-right: 0.9rem; }}
 [data-testid="stSidebar"] * {{ color: #fff; }}
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {{ margin-bottom: 0; }}
-[data-testid="stSidebarContent"] {{ scrollbar-width: none; }}
+[data-testid="stSidebarContent"] {{ scrollbar-width: none; display: flex; flex-direction: column; }}
 [data-testid="stSidebarContent"]::-webkit-scrollbar {{ display: none; }}
-[data-testid="stSidebarHeader"] {{ height: 1.6rem; min-height: 1.6rem; padding-top: 0.3rem; padding-bottom: 0; margin: 0; }}
-[data-testid="stSidebarUserContent"] {{ padding-top: 0; padding-bottom: 0.6rem; }}
-[data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {{ gap: 0.45rem; }}
+[data-testid="stSidebarHeader"] {{ height: 1.6rem; min-height: 1.6rem; padding-top: 0.3rem; padding-bottom: 0; margin: 0; flex: none; }}
+/* the panel's content fills the full height, so the user card can sit at the very bottom */
+[data-testid="stSidebarUserContent"] {{ padding-top: 0; padding-bottom: 0.6rem; flex: 1 1 auto; display: flex; flex-direction: column; }}
+[data-testid="stSidebarUserContent"] > div {{ flex: 1 1 auto; display: flex; flex-direction: column; }}
+[data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{ flex: 1 1 auto; }}
+[data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {{ gap: 0.4rem; }}
 .side-title {{ font: 600 0.96rem var(--head); margin: 0; padding: 0; }}
 .side-title.ruled {{ border-top: 1px solid rgba(255,255,255,.25); padding-top: 0.75rem; margin-top: 0.35rem; }}
 .side-rule {{ border: 0; border-top: 1px solid rgba(255,255,255,.25); margin: 0.2rem 0 0; }}
@@ -222,12 +226,34 @@ section[data-testid="stSidebar"][aria-expanded="true"] {{ width: 15.5rem !import
 [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] p {{ color: #fff; }}
 [data-testid="stSidebar"] [data-testid="stTooltipIcon"] svg {{ stroke: rgba(255,255,255,.8); }}
 
-/* signed-in card (A2) */
-.who {{ display: flex; align-items: center; gap: 0.6rem; }}
-.who .av {{ width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--purple) !important;
-           display: flex; align-items: center; justify-content: center; font: 600 0.85rem var(--head); flex: none; }}
-.who b {{ display: block; font: 600 0.95rem/1.2 var(--head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-.who span {{ display: block; font: 400 0.75rem var(--body); color: rgba(255,255,255,.8); }}
+/* signed-in user card: pinned to the bottom of the panel, with Log out just above it.
+   The two elements are created early in app.py; "order" moves them to the end of the panel. */
+[data-testid="stSidebar"] .st-key-logout {{ order: 98; margin-top: auto; }}
+[data-testid="stSidebar"] [data-testid="stLayoutWrapper"]:has(> .st-key-usercard) {{ order: 99; }}
+[data-testid="stSidebar"] .st-key-logout [data-testid="stBaseButton-secondary"] {{ min-height: 1.85rem; padding-top: 0.1rem; padding-bottom: 0.1rem; font-size: 0.8rem; }}
+.who {{ display: flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.5rem;
+        background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; }}
+.who .av {{ width: 1.75rem; height: 1.75rem; border-radius: 50%; background: #fff; color: var(--purple) !important;
+           display: flex; align-items: center; justify-content: center; font: 600 0.7rem var(--head); flex: none; }}
+.who .txt {{ min-width: 0; flex: 1 1 auto; }}
+.who .nm {{ display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.25rem; font: 600 0.85rem/1.25 var(--head); }}
+.who .nm .n {{ max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+.who .nm .t {{ flex: none; font: 500 0.72rem var(--body); color: #F2C9F3; white-space: nowrap; }}
+.who .mail {{ display: block; font: 400 0.7rem/1.3 var(--body); color: rgba(255,255,255,.82);
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+
+/* admin sidebar: rules checklist + system info */
+.rules {{ display: flex; flex-direction: column; gap: 0.35rem; }}
+.rule {{ display: flex; align-items: center; gap: 0.45rem; font: 400 0.78rem/1.3 var(--body); }}
+.rule .lb {{ flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+.rule .lb i {{ font-style: normal; color: #F2C9F3; margin-right: 0.3rem; }}
+.rule .val {{ flex: none; font: 600 0.74rem var(--head); font-variant-numeric: tabular-nums; color: #F2C9F3; }}
+.info {{ display: flex; flex-direction: column; gap: 0.2rem; }}
+.info div {{ display: flex; justify-content: space-between; gap: 0.5rem; font: 400 0.78rem/1.35 var(--body); }}
+.info span {{ color: rgba(255,255,255,.75); flex: none; }}
+.info b {{ font: 500 0.78rem var(--body); text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+.side-note-line {{ font: 400 0.76rem/1.4 var(--body); color: rgba(255,255,255,.8); margin: 0; }}
+.side-note-line b {{ color: #fff; font-weight: 600; }}
 
 .mem {{ background: rgba(255,255,255,.14); border-radius: 8px; padding: 0.35rem 0.65rem; margin: 0 0 0.25rem;
         font: 400 0.84rem/1.35 var(--body); display: flex; justify-content: space-between; gap: 0.5rem; }}
@@ -407,12 +433,37 @@ def side_rule():
     st.markdown('<hr class="side-rule">', unsafe_allow_html=True)
 
 
-def signed_in(name, user_id, role):
-    """Signed-in card at the top of the session panel: initials, name, ID and role."""
+def signed_in(name, tag, email=None):
+    """
+    Signed-in user card (shown at the bottom of the session panel):
+        [DP]  Dhruv Patel (S101)
+              s101@institute.edu
+    `tag` is the student ID, or "Admin" for the Program Office. `email` is optional.
+    """
     initials = "".join(w[0] for w in str(name).split()[:2]).upper() or "?"
+    mail = (f'<span class="mail" title="{esc(email)}">{esc(email)}</span>' if email else "")
     st.markdown(f'<div class="who"><div class="av">{esc(initials)}</div>'
-                f'<div><b>{esc(name)}</b><span>{esc(user_id)} · {esc(str(role).capitalize())}</span></div></div>',
+                f'<div class="txt"><div class="nm"><span class="n" title="{esc(name)}">{esc(name)}</span>'
+                f'<span class="t">({esc(tag)})</span></div>{mail}</div></div>',
                 unsafe_allow_html=True)
+
+
+def side_rules(rows):
+    """Checklist of rules the system enforces, each with a live value: [(label, value), ...]."""
+    body = "".join(f'<div class="rule"><span class="lb" title="{esc(label)}"><i>✓</i>{esc(label)}</span>'
+                   f'<span class="val">{esc(value)}</span></div>' for label, value in rows)
+    st.markdown(f'<div class="rules">{body}</div>', unsafe_allow_html=True)
+
+
+def side_info(rows):
+    """Small label / value lines: [(label, value), ...]."""
+    body = "".join(f'<div><span>{esc(k)}</span><b title="{esc(v)}">{esc(v)}</b></div>' for k, v in rows)
+    st.markdown(f'<div class="info">{body}</div>', unsafe_allow_html=True)
+
+
+def side_line(html_text):
+    """One short line of text in the session panel (html_text may contain <b>)."""
+    st.markdown(f'<div class="side-note-line">{html_text}</div>', unsafe_allow_html=True)
 
 
 def memory_chips(items):
